@@ -1,4 +1,4 @@
-# LaunchDarkly Flag Viewer
+# LaunchDarkly Inspector
 
 A Chrome extension that captures and displays LaunchDarkly feature flags from configured domains in a searchable interface.
 
