@@ -17,14 +17,24 @@ The extension requires broad permissions (`*://*/*`) to monitor network requests
 - No data is sent to external servers
 - You control exactly which sites it monitors
 
-## Setup
+## Installation
 
-### 1. Install the Extension
+### Option 1: Install from Release (Recommended)
 
-1. Navigate to `chrome://extensions/`
-2. Enable "Developer mode" (toggle in top right)
-3. Click "Load unpacked"
-4. Select this extension directory
+1. Download the latest `launchdarkly-inspector-v*.zip` from the [Releases page](https://github.com/sebkolind/chrome-launchdarkly/releases)
+2. Extract the zip file to a permanent location on your computer
+3. Navigate to `chrome://extensions/`
+4. Enable "Developer mode" (toggle in top right)
+5. Click "Load unpacked"
+6. Select the extracted extension directory
+
+### Option 2: Install from Source
+
+1. Clone this repository
+2. Navigate to `chrome://extensions/`
+3. Enable "Developer mode" (toggle in top right)
+4. Click "Load unpacked"
+5. Select the cloned repository directory
 
 ## Usage
 
