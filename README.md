@@ -19,14 +19,15 @@ The extension requires broad permissions (`*://*/*`) to monitor network requests
 
 ## Installation
 
-### Option 1: Install from Release (Recommended)
+### Option 1: Install from Tag (Recommended)
 
-1. Download the latest `launchdarkly-inspector-v*.zip` from the [Releases page](https://github.com/sebkolind/chrome-launchdarkly/releases)
-2. Extract the zip file to a permanent location on your computer
-3. Navigate to `chrome://extensions/`
-4. Enable "Developer mode" (toggle in top right)
-5. Click "Load unpacked"
-6. Select the extracted extension directory
+1. Download the latest version from the [Tags page](https://github.com/sebkolind/chrome-ld-inspector/tags)
+2. Click on the zip icon for the desired version to download the source code
+3. Extract the zip file to a permanent location on your computer
+4. Navigate to `chrome://extensions/`
+5. Enable "Developer mode" (toggle in top right)
+6. Click "Load unpacked"
+7. Select the extracted extension directory
 
 ### Option 2: Install from Source
 
