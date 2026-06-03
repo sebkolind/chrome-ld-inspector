@@ -1,4 +1,4 @@
-// LaunchDarkly Flag Viewer - shadcn/ui styled
+// LaunchDarkly Inspector - shadcn/ui styled
 
 let allFlags = [];
 let currentTheme = 'light';
