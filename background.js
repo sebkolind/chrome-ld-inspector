@@ -197,9 +197,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         version: 1
       }
     });
-
-    // Open options page to guide user through setup
-    chrome.runtime.openOptionsPage();
   }
 
   // Inject content script into all existing tabs
