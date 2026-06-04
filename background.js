@@ -21,13 +21,6 @@ chrome.runtime.onMessage.addListener(async (message) => {
     // Load configuration
     const config = await getConfig();
 
-    // Check if extension is configured
-    if (!config.config.isConfigured) {
-      const debugMode = await isDebugEnabled();
-      if (debugMode) console.warn('[LD Extension] Extension not configured, skipping flag processing');
-      return;
-    }
-
     // Try to extract project/env from URL if not explicitly configured
     const url = message.url || '';
     const sdkUrlPattern = config.launchDarkly.sdkUrlPattern || '/sdk/evalx/';
@@ -189,12 +182,11 @@ async function processLaunchDarklyData(data, timestamp) {
 // Inject content script into all tabs on extension load and handle installation
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
-    // Fresh install - set unconfigured state
+    // Fresh install - set default v2 schema
     await chrome.storage.sync.set({
       config: {
-        targetDomains: [],
-        isConfigured: false,
-        version: 1
+        trackedDomains: [],
+        version: 2
       }
     });
   } else if (details.reason === 'update') {

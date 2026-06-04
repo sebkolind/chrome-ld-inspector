@@ -135,7 +135,9 @@
       top: calc(100% + 0.25rem);
       right: 0;
       z-index: 50;
-      min-width: 12rem;
+      min-width: 16rem;
+      max-height: 400px;
+      overflow-y: auto;
       background: hsl(var(--popover));
       border: 1px solid hsl(var(--border));
       border-radius: 0.375rem;
@@ -457,32 +459,248 @@
       text-decoration: none;
       color: inherit;
     }
+
+    /* Domain tracking prompt (empty state) */
+    .tracking-prompt {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .tracking-prompt-text {
+      font-size: 14px;
+      color: hsl(var(--foreground));
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      max-width: 400px;
+    }
+
+    .tracking-prompt-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn-sm {
+      height: 2.25rem;
+      padding: 0 1rem;
+      font-size: 13px;
+    }
+
+    .btn-primary {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+    }
+
+    .btn-primary:hover {
+      background: hsl(var(--primary) / 0.9);
+    }
+
+    .btn-secondary {
+      background: hsl(var(--secondary));
+      color: hsl(var(--secondary-foreground));
+    }
+
+    .btn-secondary:hover {
+      background: hsl(var(--secondary) / 0.9);
+    }
+
+    /* Settings dropdown sections */
+    .dropdown-section {
+      padding: 0.5rem 0.625rem;
+    }
+
+    .dropdown-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(var(--muted-foreground));
+      margin-bottom: 0.5rem;
+    }
+
+    .dropdown-input {
+      width: 100%;
+      height: 2rem;
+      padding: 0.375rem 0.5rem;
+      border: 1px solid hsl(var(--input));
+      border-radius: 0.25rem;
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+      font-size: 12px;
+      margin-bottom: 0.5rem;
+    }
+
+    .dropdown-input:focus {
+      outline: none;
+      border-color: hsl(var(--ring));
+      box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+    }
+
+    .dropdown-btn {
+      width: 100%;
+      margin-top: 0.25rem;
+    }
+
+    .dropdown-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .dropdown-input-with-button {
+      width: 100%;
+      height: 2rem;
+      padding: 0.375rem 4rem 0.375rem 0.5rem;
+      border: 1px solid hsl(var(--input));
+      border-radius: 0.25rem;
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+      font-size: 12px;
+    }
+
+    .dropdown-input-with-button:focus {
+      outline: none;
+      border-color: hsl(var(--ring));
+      box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+    }
+
+    .dropdown-input-button {
+      position: absolute;
+      right: 0.25rem;
+      height: 1.5rem;
+      padding: 0 0.75rem;
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border: none;
+      border-radius: 0.25rem;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .dropdown-input-button:hover {
+      background: hsl(var(--primary) / 0.9);
+    }
+
+    .dropdown-input-button:active {
+      background: hsl(var(--primary) / 0.8);
+    }
+
+    .tracked-domains-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .tracked-domain-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.375rem 0.5rem;
+      background: hsl(var(--muted));
+      border-radius: 0.25rem;
+      margin-bottom: 0.25rem;
+      font-size: 12px;
+      gap: 1rem;
+    }
+
+    .tracked-domain-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .tracked-domain-name {
+      flex: 1;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 12rem;
+      cursor: help;
+    }
+
+    .btn-remove-domain {
+      width: 1.25rem;
+      height: 1.25rem;
+      padding: 0;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      border: none;
+      cursor: pointer;
+      border-radius: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .btn-remove-domain:hover {
+      background: hsl(var(--destructive) / 0.1);
+      color: hsl(var(--destructive));
+    }
+
+    .empty-domains-message {
+      font-size: 12px;
+      color: hsl(var(--muted-foreground));
+      text-align: center;
+      padding: 1rem 0;
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="header-content">
-      <h1 class="title">LaunchDarkly</h1>
+      <h1 class="title">LaunchDarkly Inspector</h1>
       <div class="dropdown">
-        <button id="settingsToggle" class="btn btn-ghost" aria-label="Settings" style="font-size: 16px;">
+        <button id="settingsToggle" class="btn btn-ghost" aria-label="Settings" style="font-size: 18px;">
           ⚙
         </button>
         <div id="settingsDropdown" class="dropdown-content">
+          <!-- Theme toggle -->
           <div class="dropdown-item" id="themeToggle">
             <span class="dropdown-label">Dark</span>
             <div class="switch" id="themeSwitch">
               <div class="switch-thumb"></div>
             </div>
           </div>
+
+          <!-- Debug toggle -->
           <div class="dropdown-item" id="debugToggle">
             <span class="dropdown-label">Debug</span>
             <div class="switch" id="debugSwitch">
               <div class="switch-thumb"></div>
             </div>
           </div>
+
           <div class="dropdown-separator"></div>
-          <div class="dropdown-item" id="configureToggle">
-            <span class="dropdown-label">Configure</span>
+
+          <!-- Project Key Section -->
+          <div class="dropdown-section">
+            <div class="dropdown-section-title">Project Key</div>
+            <div class="dropdown-input-wrapper">
+              <input
+                type="text"
+                id="projectKeyInput"
+                class="dropdown-input-with-button"
+                placeholder="Enter project key..."
+                spellcheck="false"
+              />
+              <button id="saveProjectKeyBtn" class="dropdown-input-button">Save</button>
+            </div>
+          </div>
+
+          <div class="dropdown-separator"></div>
+
+          <!-- Tracked Domains Section -->
+          <div class="dropdown-section">
+            <div class="dropdown-section-title">Tracked Domains</div>
+            <div id="trackedDomainsList" class="tracked-domains-list">
+              <!-- Dynamically populated -->
+            </div>
           </div>
         </div>
       </div>

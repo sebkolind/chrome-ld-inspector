@@ -17,29 +17,14 @@
   // Load configuration to check if we should monitor this domain
   const config = await chrome.storage.sync.get(['config', 'launchDarkly']);
 
-  // Check if extension is configured
-  if (!config.config || !config.config.isConfigured) {
-    if (debugMode) console.log('[LD Extension] Extension not configured, skipping');
-    return;
-  }
-
-  // Check if current domain matches any configured patterns
-  const currentUrl = window.location.href;
+  // Check if current domain is tracked (exact match)
   const currentHostname = window.location.hostname;
-  const targetDomains = config.config.targetDomains || [];
+  const trackedDomains = config.config?.trackedDomains || [];
 
-  const shouldMonitor = targetDomains.some(pattern => {
-    // Convert wildcard pattern to regex
-    const regexPattern = pattern
-      .replace(/\./g, '\\.')  // Escape dots
-      .replace(/\*/g, '.*');  // Convert * to .*
-
-    const regex = new RegExp(`^${regexPattern}$`, 'i');
-    return regex.test(currentHostname) || regex.test(currentUrl);
-  });
+  const shouldMonitor = trackedDomains.includes(currentHostname);
 
   if (!shouldMonitor) {
-    if (debugMode) console.log('[LD Extension] Current domain not in configured patterns, skipping');
+    if (debugMode) console.log('[LD Extension] Current domain not tracked, skipping');
     return;
   }
 

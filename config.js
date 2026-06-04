@@ -3,9 +3,8 @@
 // Default configuration schema
 const DEFAULT_CONFIG = {
   config: {
-    targetDomains: [],
-    isConfigured: false,
-    version: 1
+    trackedDomains: [],         // Array of exact hostnames that are allowed to be tracked
+    version: 2
   },
   launchDarkly: {
     projectKey: null,           // Required: user must configure their LD project key
@@ -61,10 +60,12 @@ async function saveConfig(newConfig) {
   return true;
 }
 
-// Check if extension is configured
-async function isConfigured() {
-  const config = await getConfig();
-  return config.config.isConfigured === true;
+// Check if a domain is tracked (exact match)
+function isDomainTracked(hostname, trackedDomains) {
+  if (!trackedDomains || trackedDomains.length === 0) {
+    return false;
+  }
+  return trackedDomains.includes(hostname);
 }
 
 // Get default configuration
@@ -80,23 +81,18 @@ function validateConfig(config) {
   if (!config.config) {
     errors.push('Missing config section');
   } else {
-    // Validate targetDomains
-    if (!Array.isArray(config.config.targetDomains)) {
-      errors.push('targetDomains must be an array');
-    } else if (config.config.isConfigured && config.config.targetDomains.length === 0) {
-      errors.push('At least one target domain is required when configured');
+    // Validate trackedDomains
+    if (!Array.isArray(config.config.trackedDomains)) {
+      errors.push('trackedDomains must be an array');
     } else {
-      // Validate each domain pattern
-      config.config.targetDomains.forEach((pattern, index) => {
-        if (typeof pattern !== 'string' || pattern.trim().length === 0) {
-          errors.push(`Domain pattern at index ${index} is invalid`);
+      // Validate each domain (should be exact hostname, no wildcards)
+      config.config.trackedDomains.forEach((domain, index) => {
+        if (typeof domain !== 'string' || domain.trim().length === 0) {
+          errors.push(`Domain at index ${index} is invalid`);
+        } else if (domain.includes('*')) {
+          errors.push(`Domain at index ${index} contains wildcards (not supported in v2)`);
         }
       });
-    }
-
-    // Validate isConfigured flag
-    if (typeof config.config.isConfigured !== 'boolean') {
-      errors.push('isConfigured must be a boolean');
     }
   }
 
@@ -135,31 +131,6 @@ function validateConfig(config) {
   };
 }
 
-// Check if a URL matches user-configured domain patterns
-function matchesDomainPattern(url, patterns) {
-  if (!patterns || patterns.length === 0) {
-    return false;
-  }
-
-  try {
-    const urlObj = new URL(url);
-    const hostname = urlObj.hostname;
-
-    return patterns.some(pattern => {
-      // Convert wildcard pattern to regex
-      // *.example.com -> ^.*\.example\.com$
-      // example.com -> ^example\.com$
-      const regexPattern = pattern
-        .replace(/\./g, '\\.')  // Escape dots
-        .replace(/\*/g, '.*');  // Convert * to .*
-
-      const regex = new RegExp(`^${regexPattern}$`, 'i');
-      return regex.test(hostname) || regex.test(url);
-    });
-  } catch (e) {
-    return false;
-  }
-}
 
 // Check if a URL is a LaunchDarkly URL based on configured patterns
 function isLaunchDarklyUrl(url, patterns) {
@@ -185,10 +156,9 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     getConfig,
     saveConfig,
-    isConfigured,
+    isDomainTracked,
     getDefaultConfig,
     validateConfig,
-    matchesDomainPattern,
     isLaunchDarklyUrl,
     invalidateCache
   };

@@ -7,59 +7,227 @@ let extensionConfig = null;
 
 // Initialize
 async function init() {
-  // Check if extension is configured
-  const config = await chrome.storage.sync.get(['config']);
-
-  if (!config.config || !config.config.isConfigured) {
-    // Show setup screen
-    showSetupScreen();
-    return;
-  }
-
   // Load full configuration
   extensionConfig = await chrome.storage.sync.get(['config', 'launchDarkly']);
 
   await initTheme();
   await initDebugMode();
-  await loadFlags();
+
+  // Check banner and get whether domain is tracked
+  const isDomainTracked = await checkAndShowTrackingBanner();
+
+  // Only load flags if domain is tracked
+  if (isDomainTracked) {
+    await loadFlags();
+  }
+
   setupEventListeners();
   startAutoRefresh();
 }
 
-// Show setup screen for first-run
-function showSetupScreen() {
-  const container = document.getElementById('content');
+// Check if current domain needs tracking banner
+async function checkAndShowTrackingBanner() {
+  try {
+    // Get current active tab
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tabs || tabs.length === 0) return false;
 
-  // Hide header completely (removes title, settings gear, search, stats)
-  document.querySelector('.header').style.display = 'none';
+    const currentTab = tabs[0];
+    if (!currentTab.url) return false;
 
-  // Make content container full height and centered
-  container.style.display = 'flex';
-  container.style.alignItems = 'center';
-  container.style.justifyContent = 'center';
-  container.style.height = '100%';
-  container.style.padding = '0';
+    // Skip chrome:// and extension pages
+    if (currentTab.url.startsWith('chrome://') || currentTab.url.startsWith('chrome-extension://')) {
+      return false;
+    }
 
-  container.innerHTML = `
-    <div class="empty" style="text-align: center; max-width: 350px; padding: 1rem;">
-      <div style="font-size: 3rem; margin-bottom: 1rem;">👋</div>
-      <div class="empty-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Welcome!</div>
-      <div class="empty-description" style="margin-bottom: 1.5rem;">
-        Configure the extension to get started.<br>
-        Specify which domains to monitor for LaunchDarkly flags.
+    const url = new URL(currentTab.url);
+    const hostname = url.hostname;
+
+    // Get current config
+    const config = await chrome.storage.sync.get(['config', 'launchDarkly']);
+    const trackedDomains = config.config?.trackedDomains || [];
+
+    // Check if domain is already tracked
+    if (trackedDomains.includes(hostname)) {
+      // Domain is tracked, show search/stats
+      document.querySelector('.input-wrapper').style.display = '';
+      document.querySelector('.stats').style.display = '';
+      return true; // Domain IS tracked
+    }
+
+    // Domain is not tracked, show tracking prompt
+    // Hide search and stats sections
+    document.querySelector('.input-wrapper').style.display = 'none';
+    document.querySelector('.stats').style.display = 'none';
+
+    // Show tracking prompt in content area
+    allFlags = [];
+    document.getElementById('content').innerHTML = `
+      <div class="tracking-prompt">
+        <div class="tracking-prompt-text">
+          Current domain is not tracked. Would you like to start tracking? The page will reload after clicking "Allow".
+        </div>
+        <div class="tracking-prompt-actions">
+          <button id="allowDomainBtn" class="btn btn-sm btn-primary">Allow</button>
+          <button id="denyDomainBtn" class="btn btn-sm btn-secondary">Deny</button>
+        </div>
       </div>
-      <button id="openConfigBtn" class="btn btn-primary" style="padding: 0.5rem 1rem;">
-        Open Configuration
-      </button>
-    </div>
-  `;
+    `;
+    updateStats([]);
 
-  document.getElementById('openConfigBtn').addEventListener('click', () => {
-    // Use chrome.tabs.create for better reliability
-    chrome.tabs.create({
-      url: chrome.runtime.getURL('options.html')
+    // Re-attach event listeners since we replaced the HTML
+    document.getElementById('allowDomainBtn').addEventListener('click', handleAllowDomain);
+    document.getElementById('denyDomainBtn').addEventListener('click', handleDenyDomain);
+
+    // Store current hostname for later use
+    window.currentHostname = hostname;
+
+    return false; // Domain is NOT tracked
+
+  } catch (error) {
+    console.error('Error checking tracking banner:', error);
+    return false;
+  }
+}
+
+// Handle "Allow" button click
+async function handleAllowDomain() {
+  if (!window.currentHostname) return;
+
+  try {
+    const config = await chrome.storage.sync.get(['config', 'launchDarkly']);
+    const trackedDomains = config.config?.trackedDomains || [];
+
+    // Add domain if not already present
+    if (!trackedDomains.includes(window.currentHostname)) {
+      trackedDomains.push(window.currentHostname);
+
+      // Save config while preserving launchDarkly settings
+      await chrome.storage.sync.set({
+        config: {
+          trackedDomains: trackedDomains,
+          version: 2
+        },
+        launchDarkly: config.launchDarkly
+      });
+
+      showToast('Domain added - reloading page...');
+
+      // Reload the page to inject content script
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs && tabs.length > 0) {
+        await chrome.tabs.reload(tabs[0].id);
+      }
+    }
+  } catch (error) {
+    console.error('Error adding domain:', error);
+    showToast('Failed to add domain');
+  }
+}
+
+// Handle "Deny" button click
+function handleDenyDomain() {
+  // Close the popup
+  window.close();
+}
+
+// Populate tracked domains list in settings dropdown
+async function populateTrackedDomainsList() {
+  const config = await chrome.storage.sync.get(['config', 'launchDarkly']);
+  const trackedDomains = config.config?.trackedDomains || [];
+  const container = document.getElementById('trackedDomainsList');
+
+  if (trackedDomains.length === 0) {
+    container.innerHTML = '<div class="empty-domains-message">No domains tracked</div>';
+    return;
+  }
+
+  container.innerHTML = trackedDomains.map(domain => `
+    <div class="tracked-domain-item">
+      <span class="tracked-domain-name" title="${escapeHtml(domain)}">${escapeHtml(domain)}</span>
+      <button class="btn-remove-domain" data-domain="${escapeHtml(domain)}">×</button>
+    </div>
+  `).join('');
+
+  // Add event listeners for remove buttons
+  container.querySelectorAll('.btn-remove-domain').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const domain = btn.dataset.domain;
+      await removeDomain(domain);
     });
   });
+}
+
+// Remove a tracked domain
+async function removeDomain(domain) {
+  try {
+    const config = await chrome.storage.sync.get(['config', 'launchDarkly']);
+    const trackedDomains = config.config?.trackedDomains || [];
+
+    // Remove domain from array
+    const updatedDomains = trackedDomains.filter(d => d !== domain);
+
+    // Save config while preserving launchDarkly settings
+    await chrome.storage.sync.set({
+      config: {
+        trackedDomains: updatedDomains,
+        version: 2
+      },
+      launchDarkly: config.launchDarkly
+    });
+
+    showToast('Domain removed');
+
+    // Refresh the list
+    await populateTrackedDomainsList();
+
+    // Re-check banner visibility
+    await checkAndShowTrackingBanner();
+  } catch (error) {
+    console.error('Error removing domain:', error);
+    showToast('Failed to remove domain');
+  }
+}
+
+// Load project key into input
+async function loadProjectKey() {
+  const config = await chrome.storage.sync.get(['config', 'launchDarkly']);
+  const projectKey = config.launchDarkly?.projectKey || '';
+  document.getElementById('projectKeyInput').value = projectKey;
+}
+
+// Save project key
+async function saveProjectKey() {
+  try {
+    const projectKey = document.getElementById('projectKeyInput').value.trim();
+
+    if (!projectKey) {
+      showToast('Project key cannot be empty');
+      return;
+    }
+
+    const config = await chrome.storage.sync.get(['config', 'launchDarkly']);
+
+    await chrome.storage.sync.set({
+      launchDarkly: {
+        ...config.launchDarkly,
+        projectKey: projectKey
+      }
+    });
+
+    showToast('Project key saved');
+  } catch (error) {
+    console.error('Error saving project key:', error);
+    showToast('Failed to save project key');
+  }
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // Set default theme to dark on first load to prevent flash
@@ -371,8 +539,16 @@ function setupEventListeners() {
   const settingsToggle = document.getElementById('settingsToggle');
   const settingsDropdown = document.getElementById('settingsDropdown');
 
-  settingsToggle.addEventListener('click', (e) => {
+  settingsToggle.addEventListener('click', async (e) => {
     e.stopPropagation();
+    const isShowing = settingsDropdown.classList.contains('show');
+
+    if (!isShowing) {
+      // Populate data before showing
+      await loadProjectKey();
+      await populateTrackedDomainsList();
+    }
+
     settingsDropdown.classList.toggle('show');
   });
 
@@ -395,16 +571,13 @@ function setupEventListeners() {
     toggleDebugMode();
   });
 
-  // Configure toggle (if it exists)
-  const configureToggle = document.getElementById('configureToggle');
-  if (configureToggle) {
-    configureToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      chrome.tabs.create({
-        url: chrome.runtime.getURL('options.html')
-      });
-    });
-  }
+  // Project key save button
+  document.getElementById('saveProjectKeyBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    saveProjectKey();
+  });
+
+  // Note: Tracking prompt buttons are attached dynamically in checkAndShowTrackingBanner()
 
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'FLAGS_UPDATED') {
