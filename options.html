@@ -206,6 +206,22 @@
       font-size: 0.75rem;
     }
 
+    .info-box {
+      background: hsl(200 80% 95%);
+      border: 1px solid hsl(200 80% 70%);
+      color: hsl(200 80% 20%);
+      padding: 0.75rem;
+      border-radius: 0.375rem;
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .info-box-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: hsl(200 80% 25%);
+    }
+
     .advanced-toggle {
       cursor: pointer;
       user-select: none;
@@ -273,20 +289,25 @@
   <div class="section">
     <div class="section-title">LaunchDarkly Settings</div>
     <div class="section-description">
-      Optional settings for LaunchDarkly integration. Leave blank to use auto-detection.
+      Configure your LaunchDarkly project settings. The project key is required for the "Open" button to work.
     </div>
 
     <div class="form-group">
       <label for="projectKey">
-        Project Key <span class="label-optional">(optional)</span>
+        Project Key <span class="required">*</span>
       </label>
       <input
         type="text"
         id="projectKey"
-        placeholder="my-project"
+        placeholder="default"
+        required
       />
       <div class="help-text">
-        The LaunchDarkly project key. If not set, it will be auto-detected from network requests.
+        Your LaunchDarkly project key (e.g., "default"). This is required for the "Open" button to work.
+      </div>
+      <div class="info-box">
+        <div class="info-box-title">ℹ️ Where to find your project key</div>
+        Find your project key in LaunchDarkly at <strong>Account Settings → Projects</strong> (<a href="https://app.launchdarkly.com/settings/projects" target="_blank" style="color: hsl(200 80% 30%); text-decoration: underline;">https://app.launchdarkly.com/settings/projects</a>). The project key is shown in the "Key" column.
       </div>
     </div>
 
@@ -300,7 +321,7 @@
         placeholder="production"
       />
       <div class="help-text">
-        The LaunchDarkly environment. If not set, it will be auto-detected from network requests.
+        The LaunchDarkly environment key (e.g., "production", "staging"). Optional - used for reference only.
       </div>
     </div>
 

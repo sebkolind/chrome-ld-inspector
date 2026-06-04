@@ -149,8 +149,8 @@ async function loadFlags() {
 
   if (result.ldFlags && result.ldFlags.length > 0) {
     allFlags = result.ldFlags;
-    window.ldProjectKey = result.ldProjectKey || 'default';
-    window.ldEnvironmentKey = result.ldEnvironmentKey || 'production';
+    window.ldProjectKey = result.ldProjectKey;
+    window.ldEnvironmentKey = result.ldEnvironmentKey;
 
     renderFlags(allFlags);
     updateStats(allFlags);
@@ -174,7 +174,19 @@ function renderFlags(flags) {
     return;
   }
 
+  // Get the configured project key
+  const projectKey = extensionConfig?.launchDarkly?.projectKey;
+
+  // Project badge HTML (only show if we have a project key configured)
+  const projectBadgeHtml = projectKey ? `
+    <div style="margin-bottom: 1rem; padding: 0.5rem 0.75rem; background: hsl(var(--muted)); border-radius: 0.375rem; text-align: center; font-size: 0.75rem;">
+      <span style="color: hsl(var(--muted-foreground));">Project:</span>
+      <strong style="margin-left: 0.25rem;">${escapeHtml(projectKey)}</strong>
+    </div>
+  ` : '';
+
   const html = `
+    ${projectBadgeHtml}
     <div class="space-y-3">
       ${flags.map(flag => createFlagCard(flag)).join('')}
     </div>
@@ -226,8 +238,18 @@ function createFlagCard(flag) {
 
   // LaunchDarkly dashboard URL format (use configured URL)
   const dashboardUrl = extensionConfig?.launchDarkly?.dashboardUrl || 'https://app.launchdarkly.com';
-  const projectKey = window.ldProjectKey || extensionConfig?.launchDarkly?.projectKey || 'default';
-  const ldUrl = `${dashboardUrl}/projects/${projectKey}/flags/${encodeURIComponent(flag.key)}`;
+  const projectKey = extensionConfig?.launchDarkly?.projectKey;
+
+  // Only generate URL and show Open button if we have a configured project key
+  let openButtonHtml = '';
+  if (projectKey) {
+    const ldUrl = `${dashboardUrl}/projects/${projectKey}/flags/${encodeURIComponent(flag.key)}`;
+    openButtonHtml = `
+      <button class="btn btn-sm btn-outline btn-open" data-url="${escapeHtmlAttribute(ldUrl)}">
+        Open
+      </button>
+    `;
+  }
 
   return `
     <div class="card flag-card">
@@ -241,9 +263,7 @@ function createFlagCard(flag) {
           <button class="btn btn-sm btn-secondary btn-copy" data-key="${escapeHtmlAttribute(flag.key)}">
             Copy
           </button>
-          <button class="btn btn-sm btn-outline btn-open" data-url="${escapeHtmlAttribute(ldUrl)}">
-            Open
-          </button>
+          ${openButtonHtml}
         </div>
       </div>
     </div>

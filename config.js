@@ -8,8 +8,8 @@ const DEFAULT_CONFIG = {
     version: 1
   },
   launchDarkly: {
-    projectKey: null,           // null = auto-detect from network requests
-    environmentKey: null,       // null = auto-detect from network requests
+    projectKey: null,           // Required: user must configure their LD project key
+    environmentKey: null,       // Optional: environment key for reference
     dashboardUrl: 'https://app.launchdarkly.com',
     sdkUrlPattern: '/sdk/evalx/',
     urlDetectionPatterns: [

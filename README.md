@@ -37,14 +37,15 @@ The extension requires broad permissions (`*://*/*`) to monitor network requests
 4. Click "Load unpacked"
 5. Select the cloned repository directory
 
-## Usage
+## Configuration
 
-1. Navigate to a configured domain that uses LaunchDarkly
-2. Click the extension icon
-3. View all captured flags
-4. Use the search box to filter by flag name
-5. Click "Open" to view a flag in the LaunchDarkly dashboard
-6. Click "Copy" to copy the flag key
+After installation, you'll need to configure:
+1. **Target domains** - Which domains to monitor for LaunchDarkly flags
+2. **Project key** - Your LaunchDarkly project key (required for the "Open" button)
+
+Find your project key at: https://app.launchdarkly.com/settings/projects
+
+**Note:** The "Open" button (to view flags in the LaunchDarkly dashboard) will only appear if you've configured your project key.
 
 ## Privacy
 

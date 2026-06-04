@@ -69,8 +69,14 @@ async function handleSave() {
       return;
     }
 
-    const projectKey = document.getElementById('projectKey').value.trim() || null;
+    const projectKey = document.getElementById('projectKey').value.trim();
     const environmentKey = document.getElementById('environmentKey').value.trim() || null;
+
+    // Validate project key is provided
+    if (!projectKey) {
+      showError('Project key is required. Please enter your LaunchDarkly project key.');
+      return;
+    }
     let dashboardUrl = document.getElementById('dashboardUrl').value.trim();
     if (!dashboardUrl) {
       dashboardUrl = 'https://app.launchdarkly.com';
