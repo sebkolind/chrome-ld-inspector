@@ -197,6 +197,13 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         version: 1
       }
     });
+  } else if (details.reason === 'update') {
+    // Extension updated - preserve existing configuration
+    const debugMode = await isDebugEnabled();
+    if (debugMode) console.log(`[LD Extension] Updated from ${details.previousVersion} to ${chrome.runtime.getManifest().version}`);
+
+    // Invalidate config cache to ensure fresh data is loaded
+    invalidateCache();
   }
 
   // Inject content script into all existing tabs
